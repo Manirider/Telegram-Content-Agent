@@ -8,12 +8,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Install Python dependencies
+# Create virtual environment and install dependencies
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Runtime stage
 FROM python:3.12-slim
@@ -24,27 +27,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# Create non-root user with home directory
+RUN groupadd -r appuser && useradd -r -g appuser -m appuser
 
-# Set working directory
 WORKDIR /app
 
-# Copy Python packages from builder
-COPY --from=builder /root/.local /home/appuser/.local
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy application code
 COPY --chown=appuser:appuser app/ ./app/
 COPY --chown=appuser:appuser .env.example ./
 
 # Create data directory for SQLite persistence
-RUN mkdir -p /data && chown appuser:appuser /data
+RUN mkdir -p /data && chown -R appuser:appuser /data
 
 # Switch to non-root user
 USER appuser
-
-# Add user packages to PATH
-ENV PATH=/home/appuser/.local/bin:$PATH
 
 # Python settings
 ENV PYTHONDONTWRITEBYTECODE=1
