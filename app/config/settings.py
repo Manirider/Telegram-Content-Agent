@@ -12,12 +12,15 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    # Port (Render, Heroku, Cloud Run inject PORT)
+    port: int | None = Field(default=None, validation_alias="PORT", description="Port injected by host")
+
     # Telegram
     telegram_bot_token: str = Field(..., description="Telegram Bot Token from BotFather")
 
     # Google Sheets
-    google_sheets_credentials_b64: str = Field(..., description="Base64 encoded Google Service Account JSON")
-    google_sheets_spreadsheet_id: str = Field(..., description="Google Spreadsheet ID")
+    google_sheets_credentials_b64: str = Field(default="", description="Base64 encoded Google Service Account JSON")
+    google_sheets_spreadsheet_id: str = Field(default="", description="Google Spreadsheet ID")
     google_sheets_worksheet: str = Field(default="Content", description="Worksheet name")
 
     # Ollama

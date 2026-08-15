@@ -27,8 +27,8 @@ class ContentService:
         router: ContentRouter,
         llm_orchestrator: LLMOrchestrator,
         memory_service: MemoryService,
-        sheets_repository: SheetsRepository,
-        idempotency_repo: SQLiteRepository,
+        sheets_repository: SheetsRepository | None = None,
+        idempotency_repo: SQLiteRepository | None = None,
     ):
         self.router = router
         self.llm_orchestrator = llm_orchestrator
@@ -102,23 +102,26 @@ class ContentService:
                 request_id=request_id,
             )
             
-            # Step 6: Save to Google Sheets
-            is_new, _saved_fingerprint = await self.sheets_repository.save(
-                content=normalized,
-                result=generation_result,
-                style_hash=style_hash,
-            )
-            
-            if not is_new:
-                # Race condition - another request beat us
-                await self.idempotency_repo.mark_failed(fingerprint)
-                raise DuplicateContentError(
-                    "This content with your current style was already processed.",
-                    fingerprint=fingerprint,
+            # Step 6: Save to Google Sheets (if configured)
+            if self.sheets_repository:
+                is_new, _saved_fingerprint = await self.sheets_repository.save(
+                    content=normalized,
+                    result=generation_result,
+                    style_hash=style_hash,
                 )
+                
+                if not is_new:
+                    # Race condition - another request beat us
+                    if self.idempotency_repo:
+                        await self.idempotency_repo.mark_failed(fingerprint)
+                    raise DuplicateContentError(
+                        "This content with your current style was already processed.",
+                        fingerprint=fingerprint,
+                    )
             
             # Step 7: Mark completed
-            await self.idempotency_repo.mark_completed(fingerprint)
+            if self.idempotency_repo:
+                await self.idempotency_repo.mark_completed(fingerprint)
             
             logger.info(
                 "Content processing complete",

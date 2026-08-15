@@ -58,14 +58,25 @@ class Application:
         self.llm_orchestrator = LLMOrchestrator(self.memory_service)
         
         # Google Sheets
-        sheets_config = SheetsConfig(
-            credentials_b64=self.settings.google_sheets_credentials_b64,
-            spreadsheet_id=self.settings.google_sheets_spreadsheet_id,
-            worksheet_name=self.settings.google_sheets_worksheet,
-        )
-        self.sheets_client = SheetsClient(sheets_config)
-        self.sheets_repository = SheetsRepository(self.sheets_client)
-        await self.sheets_repository.initialize()
+        if self.settings.google_sheets_credentials_b64 and self.settings.google_sheets_spreadsheet_id:
+            try:
+                sheets_config = SheetsConfig(
+                    credentials_b64=self.settings.google_sheets_credentials_b64,
+                    spreadsheet_id=self.settings.google_sheets_spreadsheet_id,
+                    worksheet_name=self.settings.google_sheets_worksheet,
+                )
+                self.sheets_client = SheetsClient(sheets_config)
+                self.sheets_repository = SheetsRepository(self.sheets_client)
+                await self.sheets_repository.initialize()
+                logger.info("Google Sheets initialized successfully")
+            except Exception as e:
+                logger.warning("Google Sheets initialization failed (running without sheets)", error=str(e))
+                self.sheets_client = None
+                self.sheets_repository = None
+        else:
+            logger.info("Google Sheets not configured - running without sheets integration")
+            self.sheets_client = None
+            self.sheets_repository = None
         
         # Content service
         self.content_service = ContentService(
