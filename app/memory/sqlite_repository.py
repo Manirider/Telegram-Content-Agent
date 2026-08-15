@@ -18,6 +18,11 @@ class SQLiteRepository:
     
     async def initialize(self) -> None:
         """Initialize database schema."""
+        import os
+        db_dir = os.path.dirname(os.path.abspath(self.db_path))
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
+            
         async with aiosqlite.connect(self.db_path) as db:
             # Style memory table
             await db.execute("""

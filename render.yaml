@@ -8,11 +8,8 @@ services:
     dockerfilePath: ./Dockerfile
     region: oregon
     plan: free
-    # Persistent disk for SQLite databases (style memory + idempotency)
-    disk:
-      name: sqlite-data
-      mountPath: /data
-      sizeGB: 1
+    # Note: Render persistent disks require a paid plan.
+    # On free tier, SQLite uses /data inside container filesystem.
     envVars:
       # === REQUIRED ===
       - key: TELEGRAM_BOT_TOKEN
