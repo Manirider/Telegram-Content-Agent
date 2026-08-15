@@ -1,5 +1,7 @@
 # Telegram Content Agent
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Manirider/Telegram-Content-Agent)
+
 A production-grade Telegram bot that ingests text, URLs, and PDFs, applies persistent user-specific style memory, generates structured content via LLM orchestration (Ollama with Groq/Gemini fallback), and writes results idempotently to Google Sheets.
 
 ## Architecture

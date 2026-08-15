@@ -2,7 +2,7 @@
 # https://render.com/docs/blueprint-spec
 
 services:
-  - type: worker
+  - type: web
     name: telegram-content-agent
     runtime: docker
     dockerfilePath: ./Dockerfile
