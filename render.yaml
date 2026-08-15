@@ -1,0 +1,55 @@
+# Render Blueprint — Telegram Content Agent
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: worker
+    name: telegram-content-agent
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    plan: free
+    # Persistent disk for SQLite databases (style memory + idempotency)
+    disk:
+      name: sqlite-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      # === REQUIRED ===
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false  # Prompt user to enter manually
+      - key: GOOGLE_SHEETS_CREDENTIALS_B64
+        sync: false
+      - key: GOOGLE_SHEETS_SPREADSHEET_ID
+        sync: false
+
+      # === LLM Configuration (cloud-only, no Ollama on free tier) ===
+      - key: LLM_PRIMARY_PROVIDER
+        value: groq
+      - key: LLM_FALLBACK_PROVIDERS
+        value: gemini
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # === Application Defaults ===
+      - key: DATABASE_PATH
+        value: /data/style_memory.db
+      - key: GOOGLE_SHEETS_WORKSHEET
+        value: Content
+      - key: GROQ_MODEL
+        value: llama-3.1-70b-versatile
+      - key: GEMINI_MODEL
+        value: gemini-1.5-flash
+      - key: LOG_LEVEL
+        value: INFO
+      - key: HEALTH_HOST
+        value: "0.0.0.0"
+      - key: HEALTH_PORT
+        value: "8080"
+
+      # === Ollama disabled (not available on free tier) ===
+      - key: OLLAMA_BASE_URL
+        value: http://localhost:11434
+      - key: OLLAMA_MODEL
+        value: llama3.1
