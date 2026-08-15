@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: telegram-content-agent
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_PATH=/data/style_memory.db
+      - HEALTH_HOST=0.0.0.0
+      - HEALTH_PORT=8080
+    volumes:
+      - sqlite_data:/data
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      - ollama
+    networks:
+      - app-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: telegram-content-agent-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+    # Note: Models need to be pulled manually or via init container
+    # For production, consider pre-baking models into a custom image
+    networks:
+      - app-network
+    # No healthcheck by default - Ollama may not be ready immediately
+    # App handles Ollama unavailability gracefully
+
+volumes:
+  sqlite_data:
+    driver: local
+  ollama_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
